@@ -1,6 +1,6 @@
 # Monerod-Node-Setup-Scripts
 Automatically create a Monerod node with HTTPS on Debian. This script configures a public monero node with HTTPS enabled. 
-It uses Caddy to create a public information site on your node, as well as renewing LetsEncrypt certificates.
+It uses Caddy to create a public website on your node, as well as renewing LetsEncrypt certificates.
 
 Run ./setup_monerod.sh as root
 
