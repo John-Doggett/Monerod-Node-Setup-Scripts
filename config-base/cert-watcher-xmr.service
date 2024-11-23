@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch Caddy certificates and restart monerod on changes
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/watch_certificates_xmr.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
