@@ -119,6 +119,7 @@ addgroup --system monero
 adduser --system --home /var/lib/monero --ingroup monero --disabled-login monero
 
 # Create necessary directories for monerod
+mkdir -v /var/lib/monero
 mkdir -v /var/run/monero
 mkdir -v /var/log/monero
 mkdir -v /etc/monero
