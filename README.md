@@ -17,3 +17,9 @@ Whether to bind the server to ipv6 or not (binds to ::).
 
 Caddy will host a website at https://[Your Domain]. It gives instructions for connecting to your node.
 If you have an existing configuration for caddy, the script backups the old config as Caddyfile.old. You will need to manually merge the configs.
+
+![Site example](https://github.com/John-Doggett/Monerod-Node-Setup-Scripts/blob/main/docs/site.png?raw=true)
+Example Node Site
+
+![config example](https://github.com/John-Doggett/Monerod-Node-Setup-Scripts/blob/main/docs/config.png?raw=true)
+Config screen
