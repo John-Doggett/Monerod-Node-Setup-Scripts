@@ -8,10 +8,10 @@ At a minimum you need ports 18080 and 18089 open for a basic monero node.
 If you want to use HTTPS, you need ports 80 and 443 open, and a domain name pointing towards your server.
 
 The script can setup a monero node in the following configurations:
-HTTPS and Tor enabled
-HTTPS enbled, Tor disabled
-HTTPS disabled, Tor enabled
-HTTPS and Tor disabled
+* HTTPS and Tor enabled
+* HTTPS enbled, Tor disabled
+* HTTPS disabled, Tor enabled
+* HTTPS and Tor disabled
 
 Caddy will host a website at https://[Your Domain]. It gives instructions for connecting to your node.
 If you have an existing configuration for caddy, the script backups the old config as Caddyfile.old. You will need to manually merge the configs.
