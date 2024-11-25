@@ -9,7 +9,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-echo "Please make sure TCP ports 18080 and 18089 are open. These are neccessary for monerod."
+echo "Please make sure TCP ports 18080 and 18089 are open. These are necessary for monerod."
 echo "If you plan to use HTTPS with your monero node, please make sure TCP ports 80 and 443 are open and you have a valid domain name pointing towards your server."
 echo "Continue? Y/N:"
 
