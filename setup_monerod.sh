@@ -2,13 +2,15 @@
 
 echo "----Monerod setup script for debian based systems----"
 echo "           Jack Doggett - jack@doggett.tech          "
+echo "                    Version 0.2                      "
 
 if [ "$EUID" -ne 0 ]
   then echo "You must run as root"
   exit 1
 fi
 
-echo "Please make sure you have a domain name pointing towards your server, and TCP port 80,443,18080, and 18089 are open."
+echo "Please make sure TCP ports 18080 and 18089 are open. These are neccessary for monerod."
+echo "If you plan to use HTTPS with your monero node, please make sure TCP ports 80 and 443 are open and you have a valid domain name pointing towards your server."
 echo "Continue? Y/N:"
 
 read answer
@@ -22,27 +24,54 @@ fi
 
 while true; do
     echo "----Configuration Questions----"
-    echo "What is the DNS record of your server?"
 
-    read dns_name
+    echo "Enable HTTPS (Sets up public website and TLS on monerod)? Y/N"
 
-    echo "What is the location of your server?"
+    read answer
 
-    read server_location
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        https=true
+    else
+        https=false
+    fi
 
-    echo "What is the contact name of your server?"
+    if [ $https == true ]; then
 
-    read owner_name
+	echo "The following questions are needed to setup HTTPS for your monero node. A public website to help clients connect to your monero node will be created."
 
-    echo "What is the contact email of your server?"
+        echo "HTTPS: What is the DNS record of your server?"
 
-    read owner_email
+        read dns_name
+
+        echo "HTTPS: What is the location of your server?"
+
+        read server_location
+
+        echo "HTTPS: What is the contact name of your server?"
+
+        read owner_name
+
+        echo "HTTPS: What is the contact email of your server?"
+
+        read owner_email
+
+    fi
+
+    echo "Enable Tor access? Y/N"
+
+    read answer
+
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        tor=true
+    else
+        tor=false
+    fi
 
     echo "Prune blockchain? Y/N"
 
     read answer
 
-    if [ "$answer" != "${answer#[Yy]}" ] ;then
+    if [ "$answer" != "${answer#[Yy]}" ]; then
         prune=true
     else
         prune=false
@@ -52,7 +81,7 @@ while true; do
 
     read answer
 
-    if [ "$answer" != "${answer#[Yy]}" ] ;then
+    if [ "$answer" != "${answer#[Yy]}" ]; then
         ipv4=true
     else
         ipv4=false
@@ -62,45 +91,64 @@ while true; do
 
     read answer
 
-    if [ "$answer" != "${answer#[Yy]}" ] ;then
+    if [ "$answer" != "${answer#[Yy]}" ]; then
         ipv6=true
     else
         ipv6=false
     fi
 
-    echo "Installing to $dns_name"
-    echo "Server location: $server_location"
-    echo "Owner name: $owner_name"
-    echo "Owner email: $owner_email"
+    echo "Using HTTPS: $https"
+    if [ $https == true ]; then
+        echo "HTTPS: Installing to $dns_name"
+        echo "HTTPS: Server location: $server_location"
+        echo "HTTPS: Owner name: $owner_name"
+        echo "HTTPS: Owner email: $owner_email"
+    fi
+    echo "Using TOR: $tor"
     echo "Pruning blockchain: $prune"
     echo "Bind IPv4: $ipv4"
-    echo "Bind IPV6: $ipv6"
+    echo "Bind IPv6: $ipv6"
 
-    if [ $ipv4 == false ] && [ $ipv6 == false ] ; then
+    if [ $ipv4 == false ] && [ $ipv6 == false ]; then
         echo "Either ipv4 or ipv6 must be enabled"
         valid=false
     else
         valid=true
     fi
 
-    echo "Configuration Okay? Y/N"
+    if [ $valid == true ]; then
+        echo "Configuration Okay? Y/N"
 
-    read answer
+        read answer
 
-    if [ "$answer" != "${answer#[Yy]}" ] && [ $valid == true ] ;then
-        break;
+        if [ "$answer" != "${answer#[Yy]}" ]; then
+            break;
+        fi
     fi
 done
+
 echo "Configuration complete, now installing"
+
 current_dir=$(pwd)
 
 echo "----Installing required packages----"
-apt-get install -y wget bzip2 caddy inotify-tools
+apt-get install -y wget bzip2
+
+if [ $https == true ]; then
+    apt-get install -y caddy inotify-tools
+fi
+
+if [ $tor == true ]; then
+    apt-get install -y tor
+fi
 
 echo "----Copying base config files----"
 cp -v config-base/monerod.conf .
-cp -v config-base/index.html .
-cp -v config-base/watch_certificates_xmr.sh .
+
+if [ $https == true ]; then
+    cp -v config-base/index.html .
+    cp -v config-base/watch_certificates_xmr.sh .
+fi
 
 echo "----Downloading and install monero----"
 temp_dir=$(mktemp -d)
@@ -141,6 +189,31 @@ chmod -v 710 /var/log/monero
 chown -R monero:monero /etc/monero
 chmod -v 710 /etc/monero
 
+if [ $tor == true ]; then
+
+    echo "----Configuring tor----"
+    
+    # Update tor config
+    echo "## Tor Monero RPC HiddenService" | tee -a /etc/tor/torrc
+    echo "HiddenServiceDir /var/lib/tor/monerod" | tee -a /etc/tor/torrc
+    echo "HiddenServicePort 18084 127.0.0.1:18084    # interface for P2P" | tee -a /etc/tor/torrc
+    echo "HiddenServicePort 18089 127.0.0.1:18089    # interface for RPC" | tee -a /etc/tor/torrc
+   
+    # Start tor service
+    systemctl enable tor
+    systemctl start tor
+
+    # Restart tor to generate keys
+    sleep 10
+    systemctl restart tor
+
+    # Get onion address
+    sleep 10
+    onion_address=$(cat /var/lib/tor/monerod/hostname)
+    echo "Onion Address: $onion_address"
+fi
+
+
 echo "----Configuring monerod.conf----"
 config_file="monerod.conf"
 
@@ -163,8 +236,30 @@ if [ $prune = true ]; then
   sed -i 's/^#\(prune-blockchain=true\)/\1/' $config_file
 fi
 
-# Replace DOMAINNAME with dns_name in rpc settings
-sed -i "s/DOMAINNAME/$dns_name/g" $config_file
+# Update config for HTTPS settings if https is true
+if [ $https == true ]; then
+
+    # Uncomment certificate settings
+    sed -i 's/^#\(rpc-ssl-private-key=\/var\/lib\/monero\/certificates\/DOMAINNAME.key\)/\1/' $config_file
+    sed -i 's/^#\(rpc-ssl-certificate=\/var\/lib\/monero\/certificates\/DOMAINNAME.crt\)/\1/' $config_file
+
+    # Replace DOMAINNAME with dns_name in rpc settings
+    sed -i "s/DOMAINNAME/$dns_name/g" $config_file
+
+fi
+
+# Update config for Tor settings if tor is true
+if [ $tor == true ]; then
+
+    # Uncomment tor settings
+    sed -i 's/^#\(tx-proxy=tor,127.0.0.1:9050,disable_noise\)/\1/' $config_file
+    sed -i 's/^#\(anonymous-inbound=ONIONADDRESS:18084,127.0.0.1:18084\)/\1/' $config_file
+    sed -i 's/^#\(pad-transactions=true\)/\1/' $config_file
+
+    # Replace onion address
+    sed -i "s/ONIONADDRESS/$onion_address/g" $config_file
+
+fi
 
 # Print config file
 cat $config_file
@@ -179,76 +274,96 @@ cp -v config-base/monerod.service /etc/systemd/system/monerod.service
 systemctl daemon-reload
 systemctl enable monerod.service
 
-echo "----Configuring node website----"
-mkdir -v /srv/${dns_name}
-html_file="index.html"
+if [ $https == true ]; then
+    echo "----Configuring node website----"
+    mkdir -v /srv/${dns_name}
+    html_file="index.html"
 
-# Replace DOMAINNAME with dns_name in website
-sed -i "s/DOMAINNAME/$dns_name/g" $html_file
+    # Replace DOMAINNAME with dns_name in website
+    sed -i "s/DOMAINNAME/$dns_name/g" $html_file
 
-# Replace NODETYPE with Pruned or Full in website
-if [ $prune = true ]; then
-  sed -i "s/NODETYPE/Pruned/g" $html_file
+    # Replace NODETYPE with Pruned or Full in website
+    if [ $prune = true ]; then
+        sed -i "s/NODETYPE/Pruned/g" $html_file
+    else
+        sed -i "s/NODETYPE/Full/g" $html_file
+    fi
+
+    # Replace LOCATION with server_location in website
+    sed -i "s/LOCATION/$server_location/g" $html_file
+
+    # Replace OWNERNAME with owner_name in website
+    sed -i "s/OWNERNAME/$owner_name/g" $html_file
+
+    # Replace OWNEREMAIL with owner_email in website
+    sed -i "s/OWNEREMAIL/$owner_email/g" $html_file
+
+    if [ $tor == true ]; then 
+        # Uncomment onion address
+        sed -i '/<!--<p><strong>Tor P2P:<\/strong> tcp:\/\/ONIONADDRESS:18084<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
+        sed -i '/<!--<p><strong>Tor RPC:<\/strong> http:\/\/ONIONADDRESS:18089<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
+
+        # Replace onion address
+        sed -i "s/ONIONADDRESS/$onion_address/g" $html_file
+    fi
+
+    # Print html file
+    cat $html_file
+
+    # Copy over html file
+    cp -v $html_file /srv/${dns_name}
+
+    # Update caddy config
+    caddy_config="/etc/caddy/Caddyfile"
+    mv -v $caddy_config ${caddy_config}.old
+    echo "${dns_name} {" | tee -a $caddy_config
+    echo "	root * /srv/${dns_name}" | tee -a $caddy_config
+    echo "	file_server" | tee -a $caddy_config
+    echo "}" | tee -a $caddy_config
+    echo "http://, https:// {" | tee -a $caddy_config
+    echo "	redir https://${dns_name}" | tee -a $caddy_config
+    echo "}" | tee -a $caddy_config
+    systemctl restart caddy
+
+    # Wait for caddy to get the new certificate
+    echo "Waiting 60 seconds for certificate to renew"
+    sleep 60
+
+    echo "----Configuring certificate monitoring service----"
+
+    # Replace DOMAINNAME with dns_name in monitoring script
+    sed -i "s/DOMAINNAME/$dns_name/g" watch_certificates_xmr.sh
+
+    # Copy over script and service
+    cp -v watch_certificates_xmr.sh /usr/local/bin/
+    cp -v config-base/cert-watcher-xmr.service /etc/systemd/system/
+
+    # Enable execution of script
+    chmod -v +x /usr/local/bin/watch_certificates_xmr.sh
+
+    systemctl daemon-reload
+    systemctl enable cert-watcher-xmr.service
+    systemctl start cert-watcher-xmr.service
+
 else
-  sed -i "s/NODETYPE/Full/g" $html_file
+    systemctl start monerod.service
 fi
-
-# Replace LOCATION with server_location in website
-sed -i "s/LOCATION/$server_location/g" $html_file
-
-# Replace OWNERNAME with owner_name in website
-sed -i "s/OWNERNAME/$owner_name/g" $html_file
-
-# Replace OWNEREMAIL with owner_email in website
-sed -i "s/OWNEREMAIL/$owner_email/g" $html_file
-
-# Print html file
-cat $html_file
-
-# Copy over html file
-cp -v $html_file /srv/${dns_name}
-
-# Update caddy config
-caddy_config="/etc/caddy/Caddyfile"
-mv -v $caddy_config ${caddy_config}.old
-echo "${dns_name} {" | tee -a $caddy_config
-echo "	root * /srv/${dns_name}" | tee -a $caddy_config
-echo "	file_server" | tee -a $caddy_config
-echo "}" | tee -a $caddy_config
-echo "http://, https:// {" | tee -a $caddy_config
-echo "	redir https://${dns_name}" | tee -a $caddy_config
-echo "}" | tee -a $caddy_config
-systemctl restart caddy
-
-# Wait for caddy to get the new certificate
-echo "Waiting 60 seconds for certificate to renew"
-sleep 60
-
-echo "----Configuring certificate monitoring service----"
-
-# Replace DOMAINNAME with dns_name in monitoring script
-sed -i "s/DOMAINNAME/$dns_name/g" watch_certificates_xmr.sh
-
-# Copy over script and service
-cp -v watch_certificates_xmr.sh /usr/local/bin/
-cp -v config-base/cert-watcher-xmr.service /etc/systemd/system/
-
-# Enable execution of script
-chmod -v +x /usr/local/bin/watch_certificates_xmr.sh
-
-systemctl daemon-reload
-systemctl enable cert-watcher-xmr.service
-systemctl start cert-watcher-xmr.service
-
 echo "----Installation complete----"
 echo ""
 echo ""
 
-echo "Congratulations! Your monero node with HTTPS is set up! Please wait a minute for the node to start"
+echo "Congratulations! Your monero node is set up!"
+if [ $https == true ]; then
+    echo "Please wait a minute for your node to start"
+fi
 echo "See:"
-echo "View your node website on https://${dns_name}"
-echo "/etc/monero/monerod.conf for your monerod.config"
-echo "/srv/${dns_name}/index.html for your node website"
+if [ $https == true ]; then
+    echo "View your node website on https://${dns_name}"
+    echo "/srv/${dns_name}/index.html for your node website"
+fi
+echo "/etc/monero/monerod.conf for your monerod config"
 echo "/var/log/monero for your monero node logs"
 echo "/var/lib/monero for your monero node database"
-echo "Please check /etc/caddy/Caddyfile.old if you previously had a caddy configuration, you must merge the config with the new Caddyfile"
+if [ $https == true ]; then
+    echo "Please check /etc/caddy/Caddyfile.old if you previously had a caddy configuration, you must merge the config with the new Caddyfile"
+fi
