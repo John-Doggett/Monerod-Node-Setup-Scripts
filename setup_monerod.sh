@@ -217,8 +217,9 @@ rmdir -v $temp_dir
 
 echo "----Setting up monerod user and files----"
 # Create a system user and group to run monerod
-addgroup --system monero
-adduser --system --home /var/lib/monero --ingroup monero --disabled-login monero
+groupadd --verbose --system monero
+useradd --verbose --system --home-dir /var/lib/monero --gid monero monero
+useradd --password '!' --shell /usr/sbin/nologin monero
 
 # Create necessary directories for monerod
 mkdir -v /var/lib/monero
