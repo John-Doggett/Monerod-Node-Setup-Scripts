@@ -232,7 +232,7 @@ if [ $https == true ]; then
 fi
 
 # Create PID and last update file
-touch /var/run/monero/monero.pid
+touch /var/run/monero/monerod.pid
 if [ $https == true ]; then
     touch /var/lib/monero/certificates/last-update
     echo "1" | tee /var/lib/monero/certificates/last-update
