@@ -9,6 +9,48 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
+# Get the architecture
+arch=$(uname -m)
+
+# Determine the Monero release based on the architecture
+case $arch in
+    x86_64)
+        release="linux64"  # 64-bit x86
+        ;;
+    i686 | i386)
+        release="linux32"     # 32-bit x86
+        ;;
+    aarch32 | arm32 | armv7*)
+        release="linuxarm7"   # 32-bit ARM
+        ;;
+    aarch64 | arm64 | armv8*)
+        release="linuxarm8"   # 64-bit ARM
+        ;;
+    *)
+        echo "Unsupported architecture: $arch"
+        exit 1
+        ;;
+esac
+
+# Print the determined release
+echo "Detected architecture: $arch"
+echo "Monero release to download: $release"
+
+# Download the appropriate Monero release (example URL)
+download_url="https://downloads.getmonero.org/${release}"
+
+# Get which package manager we use
+if command -v apt-get &> /dev/null; then
+    echo "This system uses apt."
+    install_command="apt-get"
+elif command -v dnf &> /dev/null; then
+    echo "This system uses dnf."
+    install_command="dnf"
+else
+    echo "Neither apt nor dnf found."
+    exit 1
+fi
+
 echo "Please make sure TCP ports 18080 and 18089 are open. These are necessary for monerod."
 echo "If you plan to use HTTPS with your monero node, please make sure TCP ports 80 and 443 are open and you have a valid domain name pointing towards your server."
 echo "Continue? Y/N:"
@@ -132,14 +174,26 @@ echo "Configuration complete, now installing"
 current_dir=$(pwd)
 
 echo "----Installing required packages----"
-apt-get install -y wget bzip2
+$install_command install -y wget bzip2
+if [ $? -ne 0 ]; then
+    echo "Installing wget and bzip2 failed, exiting script."
+    exit 1
+fi
 
 if [ $https == true ]; then
-    apt-get install -y caddy inotify-tools
+    $install_command install -y caddy inotify-tools
+    if [ $? -ne 0 ]; then
+        echo "Installing caddy and inotify-tools failed, exiting script."
+        exit 1
+    fi
 fi
 
 if [ $tor == true ]; then
-    apt-get install -y tor
+    $install_command install -y tor
+    if [ $? -ne 0 ]; then
+        echo "Installing tor failed, exiting script."
+        exit 1
+    fi
 fi
 
 echo "----Copying base config files----"
@@ -153,11 +207,11 @@ fi
 echo "----Downloading and install monero----"
 temp_dir=$(mktemp -d)
 cd $temp_dir
-wget https://downloads.getmonero.org/linux64
-tar -xjvf linux64
-rm -v linux64
-cp -rv monero-x86_64-linux-gnu-*/monero* /usr/local/bin/
-rm -rfv monero-x86_64-linux-gnu-*
+wget $download_url
+tar -xjvf $release
+rm -v $release
+cp -rv monero-*/monero* /usr/local/bin/
+rm -rfv monero-*
 cd $current_dir
 rmdir -v $temp_dir
 
@@ -171,17 +225,23 @@ mkdir -v /var/lib/monero
 mkdir -v /var/run/monero
 mkdir -v /var/log/monero
 mkdir -v /etc/monero
-mkdir -v /var/lib/monero/certificates
+if [ $https == true ]; then
+    mkdir -v /var/lib/monero/certificates
+fi
 
 # Create PID and last update file
 touch /var/run/monero/monero.pid
-touch /var/lib/monero/certificates/last-update
-echo "1" | tee /var/lib/monero/certificates/last-update
+if [ $https == true ]; then
+    touch /var/lib/monero/certificates/last-update
+    echo "1" | tee /var/lib/monero/certificates/last-update
+fi
 
 # Set permissions for new directories
 chown -R monero:monero /var/lib/monero
 chmod -v 710 /var/lib/monero
-chmod -v 710 /var/lib/monero/certificates
+if [ $https == true ]; then
+    chmod -v 710 /var/lib/monero/certificates
+fi
 chown -R -v monero:monero /var/run/monero
 chmod -v 710 /var/run/monero
 chown -R -v monero:monero /var/log/monero
@@ -192,7 +252,7 @@ chmod -v 710 /etc/monero
 if [ $tor == true ]; then
 
     echo "----Configuring tor----"
-    
+
     # Update tor config
     echo "## Tor Monero RPC HiddenService" | tee -a /etc/tor/torrc
     echo "HiddenServiceDir /var/lib/tor/monerod" | tee -a /etc/tor/torrc
@@ -202,7 +262,7 @@ if [ $tor == true ]; then
     if [ $https == true ]; then
         echo "HiddenServicePort 80 127.0.0.1:8080    # interface for website" | tee -a /etc/tor/torrc
     fi
-   
+
     # Start tor service
     systemctl enable tor
     systemctl start tor
@@ -302,7 +362,7 @@ if [ $https == true ]; then
     # Replace OWNEREMAIL with owner_email in website
     sed -i "s/OWNEREMAIL/$owner_email/g" $html_file
 
-    if [ $tor == true ]; then 
+    if [ $tor == true ]; then
         # Uncomment onion address
         sed -i '/<!--<p><strong>Tor P2P:<\/strong> tcp:\/\/ONIONADDRESS:18084<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
         sed -i '/<!--<p><strong>Tor RPC:<\/strong> http:\/\/ONIONADDRESS:18089<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
@@ -335,7 +395,7 @@ if [ $https == true ]; then
   	echo "	bind 127.0.0.1" | tee -a $caddy_config
    	"}" | tee -a $caddy_config
     fi
-    
+
     systemctl restart caddy
 
     # Wait for caddy to get the new certificate
