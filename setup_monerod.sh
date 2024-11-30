@@ -393,7 +393,7 @@ if [ $https == true ]; then
 	echo "	root * /srv/${dns_name}" | tee -a $caddy_config
  	echo "	file_server" | tee -a $caddy_config
   	echo "	bind 127.0.0.1" | tee -a $caddy_config
-   	"}" | tee -a $caddy_config
+   	echo "}" | tee -a $caddy_config
     fi
 
     systemctl restart caddy
