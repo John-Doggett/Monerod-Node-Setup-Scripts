@@ -288,7 +288,7 @@ if [ $ipv4 = true ]; then
 fi
 
 # Uncomment ipv6 bind
-if [ $ipv6 = true ]; then
+if [ $ipv6 == true ]; then
   sed -i 's/^#\(p2p-use-ipv6=true\)/\1/' $config_file
   sed -i 's/^#\(p2p-bind-ipv6-address=::\)/\1/' $config_file
   sed -i 's/^#\(rpc-use-ipv6=true\)/\1/' $config_file
@@ -296,7 +296,7 @@ if [ $ipv6 = true ]; then
 fi
 
 # Uncomment prune-blockchain if prune is true
-if [ $prune = true ]; then
+if [ $prune == true ]; then
   sed -i 's/^#\(prune-blockchain=true\)/\1/' $config_file
 fi
 
@@ -347,7 +347,7 @@ if [ $https == true ]; then
     sed -i "s/DOMAINNAME/$dns_name/g" $html_file
 
     # Replace NODETYPE with Pruned or Full in website
-    if [ $prune = true ]; then
+    if [ $prune == true ]; then
         sed -i "s/NODETYPE/Pruned/g" $html_file
     else
         sed -i "s/NODETYPE/Full/g" $html_file
