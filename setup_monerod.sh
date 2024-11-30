@@ -198,6 +198,10 @@ if [ $tor == true ]; then
     echo "HiddenServiceDir /var/lib/tor/monerod" | tee -a /etc/tor/torrc
     echo "HiddenServicePort 18084 127.0.0.1:18084    # interface for P2P" | tee -a /etc/tor/torrc
     echo "HiddenServicePort 18089 127.0.0.1:18089    # interface for RPC" | tee -a /etc/tor/torrc
+
+    if [ $https == true ]; then
+        echo "HiddenServicePort 80 127.0.0.1:8080    # interface for website" | tee -a /etc/tor/torrc
+    fi
    
     # Start tor service
     systemctl enable tor
