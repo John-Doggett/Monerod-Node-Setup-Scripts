@@ -45,6 +45,7 @@ if command -v apt-get &> /dev/null; then
     install_command="apt-get"
 elif command -v dnf &> /dev/null; then
     echo "This system uses dnf."
+    echo "!!!!!WARNING: this script is not fully implemented for fedora based systems. You will encounter selinux alerts!!!!!"
     install_command="dnf"
 else
     echo "Neither apt nor dnf found."
