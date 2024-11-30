@@ -104,7 +104,7 @@ while true; do
         echo "HTTPS: Owner name: $owner_name"
         echo "HTTPS: Owner email: $owner_email"
     fi
-    echo "Using TOR: $tor"
+    echo "Using Tor: $tor"
     echo "Pruning blockchain: $prune"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
