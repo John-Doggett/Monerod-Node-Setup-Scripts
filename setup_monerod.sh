@@ -379,6 +379,9 @@ if [ $https == true ]; then
     # Copy over html file
     cp -v $html_file /srv/${dns_name}
 
+    # Fix permissions of website directory
+    chown -R -v caddy:caddy /srv/${dns_name}
+
     # Update caddy config
     caddy_config="/etc/caddy/Caddyfile"
     mv -v $caddy_config ${caddy_config}.old
