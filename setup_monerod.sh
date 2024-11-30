@@ -327,6 +327,15 @@ if [ $https == true ]; then
     echo "http://, https:// {" | tee -a $caddy_config
     echo "	redir https://${dns_name}" | tee -a $caddy_config
     echo "}" | tee -a $caddy_config
+
+    if [ $tor == true ]; then
+        echo ":8080 {" | tee -a $caddy_config
+	echo "	root * /srv/${dns_name}" | tee -a $caddy_config
+ 	echo "	file_server" | tee -a $caddy_config
+  	echo "	bind 127.0.0.1" | tee -a $caddy_config
+   	"}" | tee -a $caddy_config
+    fi
+    
     systemctl restart caddy
 
     # Wait for caddy to get the new certificate
