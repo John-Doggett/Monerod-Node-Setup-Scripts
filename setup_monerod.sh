@@ -219,7 +219,8 @@ echo "----Setting up monerod user and files----"
 # Create a system user and group to run monerod
 groupadd --system monero
 useradd --system --home-dir /var/lib/monero --gid monero monero
-useradd --password '!' --shell /usr/sbin/nologin monero
+usermod -s /sbin/nologin monero
+usermod -p '!' monero
 
 # Create necessary directories for monerod
 mkdir -v /var/lib/monero
