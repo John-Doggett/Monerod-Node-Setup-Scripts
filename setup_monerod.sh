@@ -282,7 +282,7 @@ echo "----Configuring monerod.conf----"
 config_file="monerod.conf"
 
 # Uncomment ipv4 bind
-if [ $ipv4 = true ]; then
+if [ $ipv4 == true ]; then
   sed -i 's/^#\(p2p-bind-ip=0\.0\.0\.0\)/\1/' $config_file
   sed -i 's/^#\(rpc-bind-ip=0\.0\.0\.0\)/\1/' $config_file
 fi
