@@ -217,9 +217,19 @@ cd $current_dir
 rmdir -v $temp_dir
 
 echo "----Setting up monerod user and files----"
-# Create a system user and group to run monerod
-groupadd --system monero
-useradd --system --home-dir /var/lib/monero --gid monero monero
+# Create a system group for monerod, if it doesn't already exist
+if ! getent group monero > /dev/null; then
+    groupadd --system monero
+    echo "Adding monero group"
+fi
+
+# Create a system user for monerod, if it doesn't already exist
+if ! id -u monero > /dev/null 2>&1; then
+    useradd --system --home-dir /var/lib/monero --gid monero monero
+    echo "Adding monero user"
+fi
+
+# Disable login for monero user
 usermod -s /sbin/nologin monero
 usermod -p '!' monero
 
