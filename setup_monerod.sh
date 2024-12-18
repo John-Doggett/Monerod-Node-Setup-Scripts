@@ -224,12 +224,12 @@ usermod -s /sbin/nologin monero
 usermod -p '!' monero
 
 # Create necessary directories for monerod
-mkdir -v /var/lib/monero
-mkdir -v /var/run/monero
-mkdir -v /var/log/monero
-mkdir -v /etc/monero
+mkdir -v -p /var/lib/monero
+mkdir -v -p /var/run/monero
+mkdir -v -p /var/log/monero
+mkdir -v -p /etc/monero
 if [ $https == true ]; then
-    mkdir -v /var/lib/monero/certificates
+    mkdir -v -p /var/lib/monero/certificates
 fi
 
 # Create PID and last update file
@@ -343,7 +343,7 @@ systemctl enable monerod.service
 
 if [ $https == true ]; then
     echo "----Configuring node website----"
-    mkdir -v /srv/${dns_name}
+    mkdir -v -p /srv/${dns_name}
     html_file="index.html"
 
     # Replace DOMAINNAME with dns_name in website
