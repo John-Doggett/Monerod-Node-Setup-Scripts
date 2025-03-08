@@ -182,7 +182,7 @@ if [ $? -ne 0 ]; then
 fi
 
 if [ $https == true ]; then
-    $install_command install -y caddy inotify-tools
+    $install_command install -y caddy
     if [ $? -ne 0 ]; then
         echo "Installing caddy and inotify-tools failed, exiting script."
         exit 1
