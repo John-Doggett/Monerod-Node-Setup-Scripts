@@ -235,7 +235,7 @@ usermod -p '!' monero
 
 # Create necessary directories for monerod
 mkdir -v -p /var/lib/monero
-mkdir -v -p /var/run/monero
+mkdir -v -p /run/monero
 mkdir -v -p /var/log/monero
 mkdir -v -p /etc/monero
 if [ $https == true ]; then
@@ -243,7 +243,7 @@ if [ $https == true ]; then
 fi
 
 # Create PID and last update file
-touch /var/run/monero/monerod.pid
+touch /run/monero/monerod.pid
 if [ $https == true ]; then
     touch /var/lib/monero/certificates/last-update
     echo "1" | tee /var/lib/monero/certificates/last-update
@@ -255,8 +255,8 @@ chmod -v 710 /var/lib/monero
 if [ $https == true ]; then
     chmod -v 710 /var/lib/monero/certificates
 fi
-chown -R -v monero:monero /var/run/monero
-chmod -v 710 /var/run/monero
+chown -R -v monero:monero /run/monero
+chmod -v 710 /run/monero
 chown -R -v monero:monero /var/log/monero
 chmod -v 710 /var/log/monero
 chown -R monero:monero /etc/monero
