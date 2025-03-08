@@ -432,14 +432,12 @@ if [ $https == true ]; then
 else
     systemctl start monerod.service
 fi
+
 echo "----Installation complete----"
 echo ""
 echo ""
 
 echo "Congratulations! Your monero node is set up!"
-if [ $https == true ]; then
-    echo "Please wait a minute for your node to start"
-fi
 echo "See:"
 if [ $https == true ]; then
     echo "View your node website on https://${dns_name}"
