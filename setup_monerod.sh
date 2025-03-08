@@ -2,7 +2,7 @@
 
 echo "----Monerod setup script for debian based systems----"
 echo "           Jack Doggett - jack@doggett.tech          "
-echo "                    Version 0.3.1                    "
+echo "                    Version 0.4.0                    "
 
 if [ "$EUID" -ne 0 ]
   then echo "You must run as root"
