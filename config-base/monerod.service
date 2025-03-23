@@ -12,6 +12,7 @@ ExecStart=/usr/local/bin/monerod --config-file=/etc/monero/monerod.conf --pidfil
 Restart=on-failure
 RestartSec=30
 Environment="DNS_PUBLIC=tcp://8.8.8.8"
+#Environment="MONERO_RANDOMX_FULL_MEM=1"
 # Directory creation and permissions
 ####################################
 
