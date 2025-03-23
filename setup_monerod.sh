@@ -199,6 +199,7 @@ fi
 
 echo "----Copying base config files----"
 cp -v config-base/monerod.conf .
+cp -v config-base/monerod.service .
 
 if [ $https == true ]; then
     cp -v config-base/index.html .
@@ -342,7 +343,7 @@ chown -v monero:monero /etc/monero/monerod.conf
 chmod -v 640 /etc/monero/monerod.conf
 
 echo "----Configuring monerod systemd service----"
-cp -v config-base/monerod.service /etc/systemd/system/monerod.service
+cp monerod.service /etc/systemd/system/monerod.service
 systemctl daemon-reload
 systemctl enable monerod.service
 
