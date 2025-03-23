@@ -2,7 +2,7 @@
 
 echo "----Monerod setup script for debian based systems----"
 echo "           Jack Doggett - jack@doggett.tech          "
-echo "                    Version 0.4.0                    "
+echo "                    Version 0.4.1                    "
 
 if [ "$EUID" -ne 0 ]
   then echo "You must run as root"
@@ -50,6 +50,16 @@ elif command -v dnf &> /dev/null; then
 else
     echo "Neither apt nor dnf found."
     exit 1
+fi
+
+# Determine how much memory this system has
+memory_count=$(awk '/MemTotal/ { printf "%.0f \n", $2/1024 }' /proc/meminfo)
+echo "Memory count of ${memory_count}MiB detected"
+
+high_memory=false
+if [ $memory_count -ge 2861 ]; then
+    echo "High memory count detected"
+    high_memory=true
 fi
 
 echo "Please make sure TCP ports 18080 and 18089 are open. These are necessary for monerod."
@@ -120,6 +130,19 @@ while true; do
         prune=false
     fi
 
+    full_mem=false
+
+    if [ $high_memory == true ]; then
+
+        echo "Use Full RandomX dataset? This will make monerod use ~2080MB of RAM instead of 256MB. This can speed up Proof of Work verification for mining. Y/N"
+
+        read answer
+
+        if [ "$answer" != "${answer#[Yy]}" ]; then
+          full_mem=true
+	fi
+    fi
+
     echo "Bind to IPv4? Y/N"
 
     read answer
@@ -149,6 +172,7 @@ while true; do
     fi
     echo "Using Tor: $tor"
     echo "Pruning blockchain: $prune"
+    echo "Using full RandomX dataset: $full_mem"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
 
@@ -242,11 +266,6 @@ if [ $https == true ]; then
     mkdir -v -p /var/lib/monero/certificates
 fi
 
-if [ $https == true ]; then
-    touch /var/lib/monero/certificates/last-update
-    echo "1" | tee /var/lib/monero/certificates/last-update
-fi
-
 # Set permissions for new directories
 chown -R monero:monero /var/lib/monero
 chmod -v 710 /var/lib/monero
@@ -285,7 +304,6 @@ if [ $tor == true ]; then
     onion_address=$(cat /var/lib/tor/monerod/hostname)
     echo "Onion Address: $onion_address"
 fi
-
 
 echo "----Configuring monerod.conf----"
 config_file="monerod.conf"
@@ -343,7 +361,11 @@ chown -v monero:monero /etc/monero/monerod.conf
 chmod -v 640 /etc/monero/monerod.conf
 
 echo "----Configuring monerod systemd service----"
-cp monerod.service /etc/systemd/system/monerod.service
+monerod_service_file="monerod.service"
+if [ $full_mem == true ]; then
+    sed -i 's/^#\(Environment="MONERO_RANDOMX_FULL_MEM=1"\)/\1/' $monerod_service_file
+fi
+cp -v $monerod_service_file /etc/systemd/system/monerod.service
 systemctl daemon-reload
 systemctl enable monerod.service
 
