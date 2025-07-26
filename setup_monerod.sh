@@ -318,7 +318,6 @@ if [ $tor == true ]; then
         echo "HiddenServicePort 80 127.0.0.1:8080    # interface for website" | tee -a /etc/tor/torrc
     fi
 
-
     # Start tor service
     systemctl enable tor
     systemctl start tor
