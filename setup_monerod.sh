@@ -420,9 +420,6 @@ if [ $https == true ]; then
     mkdir -v -p /srv/${dns_name}
     html_file="index.html"
 
-    # Replace DOMAINNAME with dns_name in website
-    sed -i "s/DOMAINNAME/$dns_name/g" $html_file
-
     # Replace NODETYPE with Pruned or Full in website
     if [ $prune == true ]; then
         sed -i "s/NODETYPE/Pruned/g" $html_file
@@ -457,6 +454,9 @@ if [ $https == true ]; then
       sed -i '/<!--<p><strong>ZMQ Port:<\/strong> tcp:\/\/DOMAINNAME:18083<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
     fi
 
+    # Replace DOMAINNAME with dns_name in website
+    sed -i "s/DOMAINNAME/$dns_name/g" $html_file
+    
     # Print html file
     cat $html_file
 
