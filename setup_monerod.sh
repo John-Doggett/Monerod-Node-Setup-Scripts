@@ -2,7 +2,7 @@
 
 echo "----Monerod setup script for debian based systems----"
 echo "           Jack Doggett - jack@doggett.tech          "
-echo "                    Version 0.4.2                    "
+echo "                    Version 0.5                      "
 
 if [ "$EUID" -ne 0 ]
   then echo "You must run as root"
@@ -64,6 +64,7 @@ fi
 
 echo "Please make sure TCP ports 18080 and 18089 are open. These are necessary for monerod."
 echo "If you plan to use HTTPS with your monero node, please make sure TCP ports 80 and 443 are open and you have a valid domain name pointing towards your server."
+echo "If you are using ZMQ, make sure port 18083 is open."
 echo "Continue? Y/N:"
 
 read answer
@@ -153,6 +154,16 @@ while true; do
         banlist=false
     fi
 
+    echo "Enable ZMQ? This will let p2pool connect to this node. Y/N"
+
+    read answer
+
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        zmq=true
+    else
+        zmq=false
+    fi
+
     echo "Bind to IPv4? Y/N"
 
     read answer
@@ -184,6 +195,7 @@ while true; do
     echo "Pruning blockchain: $prune"
     echo "Using full RandomX dataset: $full_mem"
     echo "Using Boog900 ban list: $banlist"
+    echo "ZMQ enabled: $zmq"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
 
@@ -298,6 +310,10 @@ if [ $tor == true ]; then
     echo "HiddenServicePort 18084 127.0.0.1:18084    # interface for P2P" | tee -a /etc/tor/torrc
     echo "HiddenServicePort 18089 127.0.0.1:18089    # interface for RPC" | tee -a /etc/tor/torrc
 
+    if [ $zmq == true ]; then 
+        echo "HiddenServicePort 18083 127.0.0.1:18083    # interface for ZMQ" | tee -a /etc/tor/torrc
+    fi
+
     if [ $https == true ]; then
         echo "HiddenServicePort 80 127.0.0.1:8080    # interface for website" | tee -a /etc/tor/torrc
     fi
@@ -341,6 +357,12 @@ fi
 # Uncomment ban-list if banlist is true
 if [ $banlist == true ]; then
   sed -i 's/^#\(ban-list=\/etc\/monero\/ban_list.txt\)/\1/' $config_file
+fi
+
+# Enable ZMQ if zmq is true
+if [ $zmq == true ]; then
+  sed -i 's/^#\(zmq-pub=tcp:\/\/0.0.0.0:18083\)/\1/' $config_file
+  sed -i 's/^\(no-zmq=true\)/#\1/' $config_file
 fi
 
 # Update config for HTTPS settings if https is true
@@ -398,9 +420,6 @@ if [ $https == true ]; then
     mkdir -v -p /srv/${dns_name}
     html_file="index.html"
 
-    # Replace DOMAINNAME with dns_name in website
-    sed -i "s/DOMAINNAME/$dns_name/g" $html_file
-
     # Replace NODETYPE with Pruned or Full in website
     if [ $prune == true ]; then
         sed -i "s/NODETYPE/Pruned/g" $html_file
@@ -422,10 +441,22 @@ if [ $https == true ]; then
         sed -i '/<!--<p><strong>Tor P2P:<\/strong> tcp:\/\/ONIONADDRESS:18084<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
         sed -i '/<!--<p><strong>Tor RPC:<\/strong> http:\/\/ONIONADDRESS:18089<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
 
+	# Uncomment ZMQ port if zmq is true
+	if [ $zmq == true ]; then
+          sed -i '/<!--<p><strong>Tor ZMQ:<\/strong> tcp:\/\/ONIONADDRESS:18083<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
+	fi
         # Replace onion address
         sed -i "s/ONIONADDRESS/$onion_address/g" $html_file
     fi
 
+    # Uncomment ZMQ port if zmq is true
+    if [ $zmq == true ]; then
+      sed -i '/<!--<p><strong>ZMQ Port:<\/strong> tcp:\/\/DOMAINNAME:18083<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
+    fi
+
+    # Replace DOMAINNAME with dns_name in website
+    sed -i "s/DOMAINNAME/$dns_name/g" $html_file
+    
     # Print html file
     cat $html_file
 
