@@ -338,6 +338,7 @@ if [ $prune == true ]; then
   sed -i 's/^#\(prune-blockchain=true\)/\1/' $config_file
 fi
 
+# Uncomment ban-list if banlist is true
 if [ $banlist == true ]; then
   sed -i 's/^#\(ban-list=\/etc\/monero\/ban_list.txt\)/\1/' $config_file
 fi
