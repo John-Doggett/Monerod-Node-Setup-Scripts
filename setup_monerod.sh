@@ -338,7 +338,7 @@ if [ $prune == true ]; then
   sed -i 's/^#\(prune-blockchain=true\)/\1/' $config_file
 fi
 
-if [ $banlist == true]; then
+if [ $banlist == true ]; then
   sed -i 's/^#\(ban-list=\/etc\/monero\/ban_list.txt\)/\1/' $config_file
 fi
 
@@ -376,7 +376,7 @@ chown -v monero:monero /etc/monero/monerod.conf
 chmod -v 640 /etc/monero/monerod.conf
 
 # Download and copy over ban list if enabled
-if [ $banlist == true]; then
+if [ $banlist == true ]; then
   wget https://raw.githubusercontent.com/Boog900/monero-ban-list/main/ban_list.txt
   cp -v ban_list.txt /etc/monero
   chown -v monero:monero /etc/monero/ban_list.txt
