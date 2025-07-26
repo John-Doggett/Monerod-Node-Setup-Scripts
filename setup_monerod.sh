@@ -143,6 +143,16 @@ while true; do
 	fi
     fi
 
+    echo "Use Boog900 ban list? (recommended) Y/N"
+
+    read answer
+
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        banlist=true
+    else
+        banlist=false
+    fi
+
     echo "Bind to IPv4? Y/N"
 
     read answer
@@ -173,6 +183,7 @@ while true; do
     echo "Using Tor: $tor"
     echo "Pruning blockchain: $prune"
     echo "Using full RandomX dataset: $full_mem"
+    echo "Using Boog900 ban list: $banlist"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
 
@@ -327,6 +338,10 @@ if [ $prune == true ]; then
   sed -i 's/^#\(prune-blockchain=true\)/\1/' $config_file
 fi
 
+if [ $banlist == true]; then
+  sed -i 's/^#\(ban-list=\/etc\/monero\/ban_list.txt\)/\1/' $config_file
+fi
+
 # Update config for HTTPS settings if https is true
 if [ $https == true ]; then
 
@@ -359,6 +374,14 @@ cat $config_file
 cp -v $config_file /etc/monero/monerod.conf
 chown -v monero:monero /etc/monero/monerod.conf
 chmod -v 640 /etc/monero/monerod.conf
+
+# Download and copy over ban list if enabled
+if [ $banlist == true]; then
+  wget https://raw.githubusercontent.com/Boog900/monero-ban-list/main/ban_list.txt
+  cp -v ban_list.txt /etc/monero
+  chown -v monero:monero /etc/monero/ban_list.txt
+  chmod -v 640 /etc/monero/ban_list.txt
+fi
 
 echo "----Configuring monerod systemd service----"
 monerod_service_file="monerod.service"
