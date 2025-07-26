@@ -153,6 +153,16 @@ while true; do
         banlist=false
     fi
 
+    echo "Enable ZMQ? This will let p2pool connect to this node. Y/N"
+
+    read answer
+
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        zmq=true
+    else
+        zmq=false
+    fi
+
     echo "Bind to IPv4? Y/N"
 
     read answer
@@ -184,6 +194,7 @@ while true; do
     echo "Pruning blockchain: $prune"
     echo "Using full RandomX dataset: $full_mem"
     echo "Using Boog900 ban list: $banlist"
+    echo "ZMQ enabled: $zmq"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
 
@@ -298,9 +309,14 @@ if [ $tor == true ]; then
     echo "HiddenServicePort 18084 127.0.0.1:18084    # interface for P2P" | tee -a /etc/tor/torrc
     echo "HiddenServicePort 18089 127.0.0.1:18089    # interface for RPC" | tee -a /etc/tor/torrc
 
+    if [ $zmq == true ]; then 
+        echo "HiddenServicePort 18083 127.0.0.1:18083    # interface for ZMQ" | tee -a /etc/tor/torrc
+    fi
+
     if [ $https == true ]; then
         echo "HiddenServicePort 80 127.0.0.1:8080    # interface for website" | tee -a /etc/tor/torrc
     fi
+
 
     # Start tor service
     systemctl enable tor
@@ -341,6 +357,12 @@ fi
 # Uncomment ban-list if banlist is true
 if [ $banlist == true ]; then
   sed -i 's/^#\(ban-list=\/etc\/monero\/ban_list.txt\)/\1/' $config_file
+fi
+
+# Enable ZMQ if zmq is true
+if [ $zmq == true ]; then
+  sed -i 's/^#\(zmq-pub=tcp:\/\/0.0.0.0:18083\)/\1/' $config_file
+  sed -i 's/^\(no-zmq=true\)/#\1/' $config_file
 fi
 
 # Update config for HTTPS settings if https is true
@@ -422,8 +444,17 @@ if [ $https == true ]; then
         sed -i '/<!--<p><strong>Tor P2P:<\/strong> tcp:\/\/ONIONADDRESS:18084<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
         sed -i '/<!--<p><strong>Tor RPC:<\/strong> http:\/\/ONIONADDRESS:18089<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
 
+	# Uncomment ZMQ port if zmq is true
+	if [ $zmq == true ]; then
+          sed -i '/<!--<p><strong>Tor ZMQ:<\/strong> tcp:\/\/ONIONADDRESS:18083<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
+	fi
         # Replace onion address
         sed -i "s/ONIONADDRESS/$onion_address/g" $html_file
+    fi
+
+    # Uncomment ZMQ port if zmq is true
+    if [ $zmq == true ]; then
+      sed -i '/<!--<p><strong>ZMQ Port:<\/strong> tcp:\/\/DOMAINNAME:18083<\/p>-->/s/<!--\(.*\)-->/    \1   /' $html_file
     fi
 
     # Print html file
