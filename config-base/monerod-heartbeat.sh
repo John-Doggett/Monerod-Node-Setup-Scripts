@@ -4,7 +4,7 @@ set -u
 STATE_FILE="/run/monerod-heartbeat.failcount"
 URL="http://127.0.0.1:18089/get_height"
 SERVICE="monerod"
-MAX_FAILS=10
+MAX_FAILS=5
 
 # If monerod is not running, reset counter and exit.
 if ! systemctl is-active --quiet "$SERVICE"; then
