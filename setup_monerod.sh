@@ -184,6 +184,16 @@ while true; do
         ipv6=false
     fi
 
+	echo "Enable heartbeat service? Y/N"
+
+	read answer
+
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+        heartbeat=true
+    else
+        heartbeat=false
+    fi
+
     echo "Using HTTPS: $https"
     if [ $https == true ]; then
         echo "HTTPS: Installing to $dns_name"
@@ -198,6 +208,7 @@ while true; do
     echo "ZMQ enabled: $zmq"
     echo "Bind IPv4: $ipv4"
     echo "Bind IPv6: $ipv6"
+	echo "Enable heartbeat service: $heartbeat"
 
     if [ $ipv4 == false ] && [ $ipv6 == false ]; then
         echo "Either ipv4 or ipv6 must be enabled"
@@ -509,6 +520,38 @@ if [ $https == true ]; then
 
 else
     systemctl start monerod.service
+fi
+
+if [[ $heartbeat == true ]]; then
+  cp -v config-base/monerod-heartbeat.sh /usr/local/sbin/monerod-heartbeat.sh
+  chown -v root:root /usr/local/sbin/monerod-heartbeat.sh
+  chmod -v 744 /usr/local/sbin/monerod-heartbeat.sh
+
+  cat >/etc/systemd/system/monerod-heartbeat.service <<'EOF'
+[Unit]
+Description=Monerod RPC heartbeat check
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/monerod-heartbeat.sh
+EOF
+
+  cat >/etc/systemd/system/monerod-heartbeat.timer <<'EOF'
+[Unit]
+Description=Run monerod heartbeat every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+Unit=monerod-heartbeat.service
+
+[Install]
+WantedBy=timers.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable --now monerod-heartbeat.timer
 fi
 
 echo "----Installation complete----"
