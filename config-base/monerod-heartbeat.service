@@ -1,0 +1,6 @@
+[Unit]
+Description=Monerod RPC heartbeat check
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/monerod-heartbeat.sh
