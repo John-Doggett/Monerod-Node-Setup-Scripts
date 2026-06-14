@@ -1,0 +1,11 @@
+[Unit]
+Description=Run monerod heartbeat every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+Unit=monerod-heartbeat.service
+
+[Install]
+WantedBy=timers.target
