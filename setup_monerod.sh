@@ -526,30 +526,15 @@ if [[ $heartbeat == true ]]; then
   cp -v config-base/monerod-heartbeat.sh /usr/local/sbin/monerod-heartbeat.sh
   chown -v root:root /usr/local/sbin/monerod-heartbeat.sh
   chmod -v 744 /usr/local/sbin/monerod-heartbeat.sh
+  
+  cp -v config-base/monerod-heartbeat.serice /etc/systemd/system
+  chmod -v root:root /etc/systemd/system/monerod-heartbeat.service
+  chmod -v 744 /etc/systemd/system/monerod-heartbeat.service
 
-  cat >/etc/systemd/system/monerod-heartbeat.service <<'EOF'
-[Unit]
-Description=Monerod RPC heartbeat check
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/monerod-heartbeat.sh
-EOF
-
-  cat >/etc/systemd/system/monerod-heartbeat.timer <<'EOF'
-[Unit]
-Description=Run monerod heartbeat every minute
-
-[Timer]
-OnBootSec=1min
-OnUnitActiveSec=1min
-AccuracySec=5s
-Unit=monerod-heartbeat.service
-
-[Install]
-WantedBy=timers.target
-EOF
-
+  cp -v config-base/monerod-heartbeat.timer /etc/systemd/system
+  chmod -v root:root /etc/systemd/system/monerod-heartbeat.timer
+  chmod -v 744 /etc/systemd/system/monerod-heartbeat.timer
+ 
   systemctl daemon-reload
   systemctl enable --now monerod-heartbeat.timer
 fi
