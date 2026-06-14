@@ -18,7 +18,7 @@ if [[ -f "$STATE_FILE" ]]; then
 fi
 
 # Try RPC with a hard 30 second timeout.
-if curl --silent --show-error --fail --max-time 30 "$URL" >/dev/null; then
+if curl --silent --show-error --fail --max-time 50 "$URL" >/dev/null; then
     echo 0 > "$STATE_FILE"
     exit 0
 fi
