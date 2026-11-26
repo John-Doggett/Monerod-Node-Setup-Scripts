@@ -523,16 +523,17 @@ else
 fi
 
 if [[ $heartbeat == true ]]; then
+  echo "----Configuring heartbeat service----"
   cp -v config-base/monerod-heartbeat.sh /usr/local/sbin/monerod-heartbeat.sh
   chown -v root:root /usr/local/sbin/monerod-heartbeat.sh
   chmod -v 744 /usr/local/sbin/monerod-heartbeat.sh
   
   cp -v config-base/monerod-heartbeat.service /etc/systemd/system
-  chmod -v root:root /etc/systemd/system/monerod-heartbeat.service
+  chown -v root:root /etc/systemd/system/monerod-heartbeat.service
   chmod -v 744 /etc/systemd/system/monerod-heartbeat.service
 
   cp -v config-base/monerod-heartbeat.timer /etc/systemd/system
-  chmod -v root:root /etc/systemd/system/monerod-heartbeat.timer
+  chown -v root:root /etc/systemd/system/monerod-heartbeat.timer
   chmod -v 744 /etc/systemd/system/monerod-heartbeat.timer
  
   systemctl daemon-reload
