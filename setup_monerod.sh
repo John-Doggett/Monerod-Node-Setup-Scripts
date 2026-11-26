@@ -527,7 +527,7 @@ if [[ $heartbeat == true ]]; then
   chown -v root:root /usr/local/sbin/monerod-heartbeat.sh
   chmod -v 744 /usr/local/sbin/monerod-heartbeat.sh
   
-  cp -v config-base/monerod-heartbeat.serice /etc/systemd/system
+  cp -v config-base/monerod-heartbeat.service /etc/systemd/system
   chmod -v root:root /etc/systemd/system/monerod-heartbeat.service
   chmod -v 744 /etc/systemd/system/monerod-heartbeat.service
 
